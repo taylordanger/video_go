@@ -185,26 +185,55 @@ def transform_images(image_directory):
     images = [transform(Image.open(image_path)) for image_path in image_paths]
     return torch.stack(images)
 
-def frames_to_video(inputpath,outputpath,fps):
+def frames_to_video(inputpath, outputpath, fps):
+    """Function to combine frames into a video."""
+
     image_array = []
-    files = [f for f in os.listdir(inputpath) if isfile(join(inputpath, f))]
-    files.sort(key = lambda x: int(x[5:-4]))
+
+    try:
+        files = [f for f in os.listdir(inputpath) if isfile(join(inputpath, f))]
+    except Exception as e:
+        print(f"Failed to list files in directory {inputpath}. Error: {e}")
+        return
+
+    files.sort(key=lambda x: int(x[5:-4]))
+
     for i in range(len(files)):
-        img = cv2.imread(inputpath + files[i])
-        size =  (img.shape[1],img.shape[0])
-        img = cv2.resize(img,size)
+        try:
+            img = cv2.imread(inputpath + files[i])
+            size = (img.shape[1], img.shape[0])
+            img = cv2.resize(img, size)
+        except Exception as e:
+            print(f"Failed to read and resize image file {files[i]}. Error: {e}")
+            continue
+
         image_array.append(img)
-    fourcc = cv2.VideoWriter_fourcc('D', 'I', 'V', 'X')
-    out = cv2.VideoWriter(outputpath,fourcc, fps, size)
+
+    try:
+        fourcc = cv2.VideoWriter_fourcc('D', 'I', 'V', 'X')
+        out = cv2.VideoWriter(outputpath, fourcc, fps, size)
+    except Exception as e:
+        print(f"Failed to create VideoWriter. Error: {e}")
+        return
+
     for i in range(len(image_array)):
-        out.write(image_array[i])
+        try:
+            out.write(image_array[i])
+        except Exception as e:
+            print(f"Failed to write frame to video. Error: {e}")
+            break
+
     out.release()
 # where the stuff is at
 video_directory = '/home/darkstar/Desktop/videos/'
 base_directory = '/home/darkstar/Desktop/output/'
 output_directory = '/home/darkstar/Desktop/output_images/'
 
-video_paths = [os.path.join(video_directory, video) for video in os.listdir(video_directory) if video.endswith(".mp4")]
+try:
+    video_paths = [os.path.join(video_directory, video) for video in os.listdir(video_directory) if video.endswith(".mp4")]
+except Exception as e:
+    print(f"Failed to list mp4 files in directory {video_directory}. Error: {e}")
+    video_paths = []
 
 loss = nn.BCELoss()
 
